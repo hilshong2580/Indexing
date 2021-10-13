@@ -8,17 +8,22 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-public class Indexing {
 
+
+
+
+public class Indexing extends Posting{
+
+    private Iterator itr;
+    private Map<String, List<Posting>>;
 
     public static void main(String[] args) throws IOException {
-        System.out.println("first");
         Indexing indexing = new Indexing();
         indexing.load("shakespeare-scenes.json");
     }
 
     private void load(String inFile) {
-
+    int c = 0;
         try {
             // parsing file "JSONExample.json"
             Object obj = new JSONParser().parse(new FileReader(inFile));
@@ -26,20 +31,9 @@ public class Indexing {
             // typecasting obj to JSONObject
             JSONObject jo = (JSONObject) obj;
             JSONArray ja = (JSONArray) jo.get("corpus");
+
             // iterating address Map
-            Iterator itr2 = ja.iterator();
-
-            while (itr2.hasNext())
-            {
-                Iterator<Map.Entry> itr1 = ((Map) itr2.next()).entrySet().iterator();
-                while (itr1.hasNext()) {
-                    Map.Entry pair = itr1.next();
-                    System.out.println(pair.getKey() + " : " + pair.getValue());
-                }
-            }
-
-
-
+            itr = ja.iterator();
 
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
@@ -50,27 +44,13 @@ public class Indexing {
         } catch (ParseException e) {
             e.printStackTrace();
         }
+    }
 
+    public void indexingProcess(){
+        int docid = 0;
 
     }
 
-    private static void parseEmployeeObject(JSONObject employee)
-    {
-        //Get employee object within list
-        JSONObject employeeObject = (JSONObject) employee.get("corpus");
-
-        //Get employee first name
-        String sceneId = (String) employeeObject.get("sceneId");
-        System.out.println(sceneId);
-
-        //Get employee last name
-        String sceneNum = (String) employeeObject.get("sceneNum");
-        System.out.println(sceneNum);
-
-        //Get employee website name
-        String text = (String) employeeObject.get("text");
-        System.out.println(text);
-    }
 }
 /**
  * Given a collection of documents, C
