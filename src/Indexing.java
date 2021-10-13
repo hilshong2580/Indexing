@@ -12,10 +12,11 @@ import org.json.simple.parser.ParseException;
 
 
 
-public class Indexing extends Posting{
+public class Indexing{
 
     private Iterator itr;
-    private Map<String, List<Posting>>;
+    private Map<String, List<Posting>> map = new HashMap<String, List<Posting>>();
+
 
     public static void main(String[] args) throws IOException {
         Indexing indexing = new Indexing();
