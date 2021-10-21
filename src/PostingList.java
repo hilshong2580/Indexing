@@ -7,7 +7,7 @@ public class PostingList {
 
     public PostingList(){
         this.postings = new ArrayList<>();
-        index = 0;
+        this.index = 0;
     }
     public boolean haveMore(){
         return postings.size() > index;
@@ -16,6 +16,9 @@ public class PostingList {
     public Posting getCurPosting(){
         if(postings.size()==0)
             return null;
+        else if(this.index >= this.postings.size())
+            this.index = this.postings.size()-1;
+
         return this.postings.get(this.index);
     }
 
@@ -24,12 +27,14 @@ public class PostingList {
     }
 
     public void skipTo(int docid){
-        for(int i = 0; i< postings.size(); i++)
-            if(postings.get(i).getDocId() >= docid){
-                this.index = i;
-                break;
+        this.index = 0;
+        for(Posting p: postings){
+            if(p.getDocId() < docid){
+                this.index++;
             }
+        }
     }
+
 
     public List<Posting> getPostings(){
         return this.postings;
@@ -37,7 +42,6 @@ public class PostingList {
 
     public void addPosting(Posting p){
         this.postings.add(p);
-        this.index++;
     }
 
     public int getCurListMaxDocId(){
@@ -45,7 +49,18 @@ public class PostingList {
        return posting.getDocId();
     }
 
+    public int getIndex(){
+        return this.index;
+    }
     public void setIndex(){
         this.index = 0;
+    }
+
+    @Override
+    public String toString() {
+        return "PostingList{" +
+                "postings=" + postings +
+                ", index=" + index +
+                '}';
     }
 }

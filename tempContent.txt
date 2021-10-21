@@ -1,0 +1,65 @@
+
+    public void termBasedQueries0(){
+        HashMap<Integer, Integer> thee = getDocidSet(postingMap.get("thee"));
+        HashMap<Integer, Integer> thou = getDocidSet(postingMap.get("thou"));
+        HashMap<Integer, Integer> you = getDocidSet(postingMap.get("you"));
+        HashSet<Integer> set = new HashSet<>();
+        System.out.println("you.get(8): "+ you.get(8));
+
+
+        thou.forEach((k,v)->{
+            if(!thee.containsKey(k))
+                thee.put(k, v);
+            else if(thou.get(k) > thee.get(k))
+                thee.put(k, v);
+        });
+
+        thee.forEach((k,v)->{
+            if(you.containsKey(k))
+                if(v > you.get(k))
+                    set.add(k);
+        });
+        ArrayList<String> list = new ArrayList<>();
+        for(int i: set)
+            list.add(sceneId[i]);
+        Collections.sort(list);
+        writeTerm(list, "term0.txt");
+    }
+
+    public void termBased123(){
+        HashSet<Integer> set = new HashSet<>();
+        set.addAll(findWord("venice"));
+        set.addAll(findWord("rome"));
+        set.addAll(findWord("denmark"));
+
+        ArrayList<String> list = new ArrayList<>();
+        for(int i : set)
+            list.add(sceneId[i]);
+        Collections.sort(list);
+        writeTerm(list, "term1.txt");
+
+
+        HashSet<Integer> set2 = new HashSet<>(findWord("goneril"));
+        ArrayList<String> list2 = new ArrayList<>();
+        for(int i : set2)
+            list2.add(playId[i]);
+        Collections.sort(list2);
+        writeTerm(list2, "term2.txt");
+
+        HashSet<Integer> set3 = new HashSet<>(findWord("soldier"));
+        ArrayList<String> list3 = new ArrayList<>();
+        for(int i : set3)
+            list3.add(playId[i]);
+        Collections.sort(list3);
+        writeTerm(list3, "term3.txt");
+
+    }
+
+
+
+    public HashSet<Integer> findWord(String str){
+        HashSet<Integer> set = new HashSet<>();
+        if(postingMap.containsKey(str))
+            getDocidSet(postingMap.get(str)).forEach((k,v)-> set.add(k));
+        return set;
+    }
