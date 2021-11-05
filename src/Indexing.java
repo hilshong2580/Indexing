@@ -2,6 +2,7 @@ import java.io.IOException;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -28,15 +29,48 @@ public class Indexing{
         indexing.phraseBasedQueries("wherefore art thou romeo", "phrase1.txt");
         indexing.phraseBasedQueries("let slip", "phrase2.txt");
 
-    }
-    public void test(){
-        invertedList.forEach((k,v)->{
-            v.getPostings().forEach((e)-> e.getAllPositions().forEach((post)-> System.out.print("[docid:"+e.getDocId()+", position:"+post+"] ")));
-            System.out.println(" ");
-        });
-        System.out.println(invertedList.size());
+        indexing.test();
+
     }
 
+    public void test(){
+        HashMap<Integer, Integer> you = getDocidMap("you");
+        HashMap<Integer, Integer> theeThou = new HashMap<>();
+
+        for (String s : "thee thou".split(" ")) {
+            //s->(thee,thou); compareMap->you; k = docid, v = value
+            getDocidMap(s).forEach((docid, frequency) -> {
+                if (!(theeThou.containsKey(docid)))
+                    theeThou.put(docid, 0);
+                theeThou.put(docid, theeThou.get(docid) + frequency);
+            });
+        }
+
+        try (PrintWriter writer = new PrintWriter("theeThouMain.csv")) {
+            StringBuilder sb = new StringBuilder();
+
+            for(int i = 1; i < 749; i++){
+                if(theeThou.containsKey(i)){
+                    sb.append(i-1);
+                    sb.append(',');
+                    sb.append(theeThou.get(i));
+                    sb.append('\n');
+                }
+
+            }
+            writer.write(sb.toString());
+            System.out.println("done!");
+
+        } catch (FileNotFoundException e) {
+            System.out.println(e.getMessage());
+        }
+
+
+    }
+
+
+
+    //split the sentence and store it in to a map
     public void indexingProcess(){
         //initial the docid is 0
         int docid = 0;
@@ -46,6 +80,7 @@ public class Indexing{
             docid +=1;
             //get the JSON object from itr
             JSONObject d = (JSONObject) itr.next();
+
 
             //save the playId and sceneId
             playId[docid] = d.get("playId").toString();
@@ -61,7 +96,6 @@ public class Indexing{
             Iterator tokenItr = Arrays.stream(tokens).iterator();
             while(tokenItr.hasNext()){
                 position += 1;
-
                 //get the token
                 String token = tokenItr.next().toString();
 
@@ -102,64 +136,62 @@ public class Indexing{
         ArrayList<Posting> matchingPostings = new ArrayList<>();
         PostingList newList = new PostingList();
 
-        //checkHaveMore will return reture if size of Posting list larger than the index for L
+        //checkHaveMore will return true if size of Posting list larger than the index for L
         while (checkHaveMore(L)){
             //max over current docid in list in L
             int candidate = maxDocid(L);
 
-            //put the index pointer to the candidate's docid id
+            //set the pointer num based on candidate's docid id
             for(PostingList l : L)
                 l.skipTo(candidate);
 
+            //check all PostingList current's docid is equal to candidate
+            //so the following work if true
             if(allMatch(L, candidate)){
+
+                //add the same current docid's posting to a list from L
                 for(PostingList l : L){
                     matchingPostings.add(l.getCurPosting());
                 }
 
-                if(matchingWindows(matchingPostings) != null)
-                    newList.addPosting(matchingWindows(matchingPostings));
+                //put the matching posting list to matchingWindows
+                Posting p = matchingWindows(matchingPostings);
+                if(p != null)
+                    newList.addPosting(p);
 
             }
-
-            for(PostingList l : L){
-                l.skipTo(candidate+1);
-            }
+            //clear the matching posting list for the another looping
             matchingPostings.clear();
-        }
 
-        newList.setIndex();
+            //move the PostingList pointer to next for the continuous looping
+            for(PostingList l : L)
+                l.skipTo(candidate+1);
+        }
         return newList;
     }
 
     public Posting matchingWindows(ArrayList<Posting> l){
+        Posting newPost = null;
+        Posting first = l.get(0);
 
-        int distance = 1;
-        boolean found = false;
-        Posting result = null;
-        List<Integer> p0 = l.get(0).getAllPositions();
-        for(int i : p0){
-            int prev = i;
-            for(int j = 1; j < l.size(); j++){
-                List<Integer> p = l.get(j).getAllPositions();
-                found = false;
-                for(int k : p){
-                    if(prev < k && k <= (prev+distance)){
-                        found = true;
-                        prev = k;
-                        break;
-                    }
+        for(int firstPosition: first.getAllPositions()){
+            int currectSize = 1;
+            int prev = firstPosition;
+            for(int i = 1; i < l.size();i++){
+                if(l.get(i).getAllPositions().contains(prev+1)){
+                    prev++;
+                    ++currectSize;
+                    if(currectSize == l.size())
+                        if(newPost==null)
+                            newPost = new Posting(l.get(0).getDocId(), prev);
+                        else
+                            newPost.addPositions(prev);
                 }
-                if(!found)
+                else
                     break;
             }
-            if(found)
-                if(result == null){
-                    result = new Posting(l.get(0).getDocId(), i);
-                }else
-                    result.addPositions(p0.get(i));
         }
-
-        return result;
+        return newPost;
     }
 
     //Doing the term based queries
@@ -170,20 +202,29 @@ public class Indexing{
         //save the playid or scene id
         HashSet<String> able = new HashSet<>();
 
-        //save the docid if the first frequency larger second
         //getDocidMap = HashMap<docid, frequency>
         if(compare != null){
-            HashMap<Integer, Integer> compareMap = getDocidMap(compare);
+            HashMap<Integer, Integer> you = getDocidMap(compare);
+            HashMap<Integer, Integer> theeThou = new HashMap<>();
+
             for (String s : contain.split(" ")) {
                 //s->(thee,thou); compareMap->you; k = docid, v = value
-                //if "you" contain key and its frequency lower than s frequency
-                getDocidMap(s).forEach((k,v)->{
-                    if(compareMap.containsKey(k))
-                        if(v > compareMap.get(k))
-                            set.add(k);
+                getDocidMap(s).forEach((docid,frequency)->{
+                    if(!(theeThou.containsKey(docid)))
+                        theeThou.put(docid, 0);
+                    theeThou.put(docid, theeThou.get(docid)+frequency);
+                });
+
+                theeThou.forEach((docid, frequency) ->{
+                    if(you.containsKey(docid))
+                        if (frequency > you.get(docid))
+                            set.add(docid);
+                    else
+                        set.add(docid);
                 });
             }
-        //save the all docid based on the term from invertedList
+
+            //save the all docid based on the term from invertedList
         } else {
             for (String s : contain.split(" ")) {
                 getDocidMap(s).forEach((k,v)-> set.add(k));
@@ -307,15 +348,6 @@ public class Indexing{
         } catch (IOException | ParseException e) {
             e.printStackTrace();
         }
-    }
-
-    public void printInvertedList(){
-        invertedList.forEach((k,v)->{
-            System.out.print(k+" ");
-            v.getPostings().forEach((e)-> e.getAllPositions().forEach((post)-> System.out.print("[docid:"+e.getDocId()+", position:"+post+"] ")));
-            System.out.println(" ");
-        });
-        System.out.println(invertedList.size());
     }
 
 }
