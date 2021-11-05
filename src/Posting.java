@@ -15,24 +15,12 @@ public class Posting {
         return this.docId;
     }
 
-    public void setDocId(int number){
-        this.docId = number;
-    }
-
     public List<Integer> getAllPositions() {
         return this.positions;
     }
 
     public void addPositions(int number){
         this.positions.add(number);
-    }
-
-    public void removePositions(int index){
-        this.positions.remove(index);
-    }
-
-    public int getPositions(int index){
-        return this.positions.get(index);
     }
 
 
