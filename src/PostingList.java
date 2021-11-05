@@ -52,7 +52,7 @@ public class PostingList {
     public int getIndex(){
         return this.index;
     }
-    public void setIndex(){
+    public void resetIndex(){
         this.index = 0;
     }
 
